@@ -7,12 +7,12 @@ before_install:
 - sudo apt-get install -qq libgl1-mesa-dev xorg-dev
 install:
 - go get github.com/laher/goxc
-script:
 - go get -t -v ./...
+script:
 - diff -u <(echo -n) <(gofmt -d ./)
 - go tool vet -composites=false ./
 - go test -v -race ./...
-- goxc -bc="linux,!arm windows,386 darwin" -d . -n dusk
+- goxc -bc="linux,!arm windows darwin" -d . -n dusk
 deploy:
   provider: releases
   api_key:
