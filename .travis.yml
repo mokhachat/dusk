@@ -1,7 +1,6 @@
 language: go
 go:
 - 1.5
-env: PATH=/home/travis/gopath/bin:$PATH
 before_install:
 - sudo apt-get update
 - sudo apt-get install -qq libgl1-mesa-dev xorg-dev
@@ -12,7 +11,7 @@ script:
 - diff -u <(echo -n) <(gofmt -d ./)
 - go tool vet -composites=false ./
 - go test -v -race ./...
-- goxc -d . -resources-include='README*,LICENSE*' -n dusk
+- goxc -bc="linux,!arm windows,386 darwin" -d . -resources-include='README*,LICENSE*' -n dusk
 deploy:
   provider: releases
   api_key:
