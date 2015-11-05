@@ -9,8 +9,8 @@ import (
 	"runtime"
 	"strings"
 
-	gl "github.com/go-gl/gl/v3.3-core/gl"
-	glfw "github.com/go-gl/glfw/v3.1/glfw"
+	"github.com/go-gl/gl/v3.3-core/gl"
+	"github.com/go-gl/glfw/v3.1/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 )
 
@@ -69,7 +69,7 @@ func main() {
 	gl.BindFragDataLocation(program, 0, gl.Str("outputColor\x00"))
 
 	// Load the texture
-	texture, err := newTexture("texture.png")
+	texture, err := newTexture("data/texture.png")
 	if err != nil {
 		panic(err)
 	}

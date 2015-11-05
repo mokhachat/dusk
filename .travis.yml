@@ -12,13 +12,13 @@ script:
 - diff -u <(echo -n) <(gofmt -d ./)
 - go tool vet -composites=false ./
 - go test -v -race ./...
-- goxc -bc="linux,!arm windows darwin" -d . -n dusk
+- goxc -bc="linux,amd64" -d . -resources-include="README*,LICENSE*,data/*" -n dusk
 deploy:
   provider: releases
   api_key:
     secure: g5LXXrEkksgBbWygG6IQAq7ODgRsNFzXfuO6/9sgMPYH/CvRr9s9+pyJl2Ep0hr6u77gbTaVfR+d3AqkgT2RH7h7ytH8L+9PGoXD/vHJf4d1wAgPzoRLpB5/wuTbaXhg/odV9BINdKqzlDMzgVhR+sUQLAZ4ajNyZh3Cw0C/mronBw7X5pzCsiSdkcMyaXuQI+o+5Iuro08yKXye3YFsBZc0ZgzqzyXSiVONXzqdf33eYMxxk7jcuYdnrG6+iFLwLvtPI/lU9IB4fYW6kP5R+HMnB2aK1LC/wJBzZr9yCAAMmPwVUkgOPhk1nvwwp7E67OcKkWfXlxs+Zg5X2hN4G4yF4iPK4S9sVk3tiB7JXEuIoS4V/aMy58XPkjlpNbrqrL45A+o7uaXjyerFs1aS6UvmAEkyZ99DDzM2t6ztsbWFBNbDp0LJrW8iJCC0/zxs1OYTlD++pUmxRNfh6JEiW3QSp7wgd4C3bwSMXB5h2g0+sVcTlh9efeRZ6F2/Y6HBTXrT4T7tc0b1lsIEXym9Dd2e6MzewweMnSMH5VlXyLvrh+8d62FxNfPm0ROhGjK+R0lVCmzdrQUGlCbFRp/k8wOOO3cTsNFoKRi8SHqeSbVN22O9lmftnemOdWGCmeSBYXWdMVgQOwj+jssEAjyPAxb81PHmac9FnG+XQHvk058=
   file:
-  - dusk-win32.zip
+  - snapshot/dask_linux_amd64.tar.gz
   skip_cleanup: true
   on:
     tags: true
