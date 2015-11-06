@@ -8,6 +8,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/go-gl/gl/v3.3-core/gl"
 	"github.com/go-gl/glfw/v3.1/glfw"
@@ -100,31 +101,56 @@ func main() {
 	angle := 0.0
 	gl.ClearColor(0.0, 0.0, 0.0, 1.0)
 
-	previousTime := glfw.GetTime()
+	frame := make(chan bool)
 
+	tf := time.NewTicker(time.Second)
+	defer tf.Stop()
+	go func() {
+		counter := 0
+		for {
+			select {
+			case <-frame:
+				counter++
+			case <-tf.C:
+				fmt.Println(counter)
+				counter = 0
+			}
+		}
+	}()
+
+	t := time.NewTicker(16666 * time.Microsecond)
+	defer t.Stop()
+	go func() {
+		for range t.C {
+			angle += 0.01
+		}
+	}()
+
+	t2 := time.NewTicker(16666 * time.Microsecond)
+	defer t2.Stop()
 	for !window.ShouldClose() {
-		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+		select {
+		case <-t2.C:
+			gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		time := glfw.GetTime()
-		elapsed := time - previousTime
-		previousTime = time
+			model = mgl32.HomogRotate3D(float32(angle), mgl32.Vec3{0, 1, 0})
 
-		angle += elapsed
-		model = mgl32.HomogRotate3D(float32(angle), mgl32.Vec3{0, 1, 0})
+			// Render
+			gl.UseProgram(program)
+			gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
 
-		// Render
-		gl.UseProgram(program)
-		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
+			gl.BindVertexArray(vao)
 
-		gl.BindVertexArray(vao)
+			gl.ActiveTexture(gl.TEXTURE0)
+			gl.BindTexture(gl.TEXTURE_2D, texture)
 
-		gl.ActiveTexture(gl.TEXTURE0)
-		gl.BindTexture(gl.TEXTURE_2D, texture)
+			gl.DrawArrays(gl.TRIANGLES, 0, 6*2*3)
 
-		gl.DrawArrays(gl.TRIANGLES, 0, 6*2*3)
+			window.SwapBuffers()
+			glfw.PollEvents()
 
-		window.SwapBuffers()
-		glfw.PollEvents()
+			frame <- true
+		}
 	}
 }
 
