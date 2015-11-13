@@ -69,14 +69,14 @@ func compile(source string, shaderType uint32) (uint32, error) {
 const VertexShader = `
 #version 330
 uniform mat4 projection;
-uniform mat4 camera;
+uniform mat4 view;
 uniform mat4 model;
-in vec3 vert;
-in vec2 vertTexCoord;
-out vec2 fragTexCoord;
+in vec3 vPos;
+in vec2 vUv;
+out vec2 fUv;
 void main() {
-    fragTexCoord = vertTexCoord;
-    gl_Position = projection * camera * model * vec4(vert, 1);
+    fUv = vUv;
+    gl_Position = projection * view * model * vec4(vPos, 1);
 }
 ` + "\x00"
 
@@ -84,9 +84,9 @@ void main() {
 const FragmentShader = `
 #version 330
 uniform sampler2D tex;
-in vec2 fragTexCoord;
-out vec4 outputColor;
+in vec2 fUv;
+out vec4 outColor;
 void main() {
-    outputColor = texture(tex, fragTexCoord);
+    outColor = texture(tex, fUv);
 }
 ` + "\x00"

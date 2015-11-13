@@ -32,6 +32,7 @@ func main() {
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 	window, err := glfw.CreateWindow(windowWidth, windowHeight, "dusk", nil, nil)
+
 	if err != nil {
 		panic(err)
 	}
@@ -70,7 +71,7 @@ func main() {
 
 	// Load the texture
 	//texture, err := texture.Load("data/texture.png")
-	texture, err := texture.Text("data/RictyDiminished-Regular.ttf", 256, "ポ")
+	texture, err := texture.Text("data/RictyDiminished-Regular.ttf", 128, "ポA1")
 	if err != nil {
 		panic(err)
 	}

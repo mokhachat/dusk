@@ -24,7 +24,7 @@ func Text(fontfile string, size int, text string) (uint32, error) {
 
 	// Draw the background and the guidelines.
 	fg, bg := image.White, image.Transparent
-	imgW, imgH := size, size
+	imgW, imgH := size*len([]rune(text)), size
 
 	rgba := image.NewRGBA(image.Rect(0, 0, imgW, imgH))
 	draw.Draw(rgba, rgba.Bounds(), bg, image.ZP, draw.Src)
@@ -47,5 +47,6 @@ func Text(fontfile string, size int, text string) (uint32, error) {
 	}
 	d.DrawString(text)
 
+	// TODO: export UV
 	return Create(*rgba)
 }
