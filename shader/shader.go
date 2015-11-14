@@ -68,15 +68,52 @@ func compile(source string, shaderType uint32) (uint32, error) {
 // VertexShader po
 const VertexShader = `
 #version 330
-uniform mat4 projection;
-uniform mat4 view;
-uniform mat4 model;
+uniform mat4 mProj;
+uniform mat4 mView;
+uniform mat4 mModel;
+uniform mat4 mNormal; // trans(inv(MV))
 in vec3 vPos;
+in vec3 vNor;
 in vec2 vUv;
 out vec2 fUv;
+out vec3 LI;
+
+struct Light {
+	vec4 pos;
+	vec3 La; // ambient
+	vec3 Ld; // diffuse
+	vec3 Ls; // specular
+};
+struct Material {
+	vec3 Ka;
+	vec3 Kd;
+	vec3 Ks;
+	float sh;
+};
+uniform Light light;
+uniform Material mat;
+
 void main() {
+		vec4 tnorm = normalize(mNormal * vec4(vNor, 1.0));
+		mat4 MV = mView * mModel;
+		vec4 eye = MV * vec4(vPos ,1.0);
+		vec3 s = normalize(vec3(light.pos - eye));
+		vec3 v = normalize(-eye.xyz);
+		vec3 r = reflect(-s, tnorm.xyz);
+
+		vec3 amb = light.La * mat.Ka;
+
+		float sn = max(dot(s, tnorm.xyz), 0.0);
+		vec3 diff = light.Ld * mat.Kd * sn;
+
+		vec3 spec = vec3(1.0);
+		if(sn > 0.0){
+			spec = light.Ls * mat.Ks * pow(max(dot(r, v) ,0.0), mat.sh);
+		}
+
+		LI = amb + diff + spec;
     fUv = vUv;
-    gl_Position = projection * view * model * vec4(vPos, 1);
+    gl_Position = mProj * MV * vec4(vPos, 1);
 }
 ` + "\x00"
 
@@ -85,8 +122,9 @@ const FragmentShader = `
 #version 330
 uniform sampler2D tex;
 in vec2 fUv;
+in vec3 LI;
 out vec4 outColor;
 void main() {
-    outColor = texture(tex, fUv);
+    outColor = vec4(LI, 1.0) * texture(tex, fUv);
 }
 ` + "\x00"
