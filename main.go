@@ -163,7 +163,40 @@ func main() {
 		}
 	}()
 
-	for !window.ShouldClose() && window.GetKey(glfw.KeyEscape) != glfw.Press {
+	// window.GetKey(glfw.KeyEscape) != glfw.Press
+	window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+		// action: Release, Press, Repeat
+		// mod: ModShift, ModControl ModAlt, ModSuper
+		if key == glfw.KeyEscape && action == glfw.Press {
+			mode := window.GetInputMode(glfw.CursorMode)
+			next := glfw.CursorDisabled
+			if mode == glfw.CursorDisabled {
+				next = glfw.CursorNormal
+			}
+			window.SetInputMode(glfw.CursorMode, next)
+		}
+	})
+
+	window.SetMouseButtonCallback(func(w *glfw.Window, button glfw.MouseButton, action glfw.Action, mod glfw.ModifierKey) {
+		// button: MouseButtonLeft, MouseButtonRight, MouseButtonMiddle
+		btn := map[glfw.MouseButton]string{
+			glfw.MouseButtonLeft:   "left",
+			glfw.MouseButtonRight:  "right",
+			glfw.MouseButtonMiddle: "middle",
+		}
+		act := map[glfw.Action]string{
+			glfw.Press:   "press",
+			glfw.Release: "release",
+			glfw.Repeat:  "repeat",
+		}
+		fmt.Println(btn[button] + act[action])
+	})
+
+	window.SetCursorPosCallback(func(w *glfw.Window, xpos float64, ypos float64) {
+		fmt.Printf("mouser: (%f, %f)\n", xpos, ypos)
+	})
+
+	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		model = mgl32.HomogRotate3D(float32(angle), mgl32.Vec3{0, 1, 0})
