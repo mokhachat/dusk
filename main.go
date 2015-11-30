@@ -45,7 +45,9 @@ func main() {
 	//version := gl.GoStr(gl.GetString(gl.VERSION))
 	//fmt.Println("OpenGL version", version)
 
-	program, err := shader.Program(shader.VertexShader, shader.FragmentShader)
+	program, err := shader.Program(shader.VSToon, shader.PSToon)
+	//program, err := shader.Program(shader.VSPhong, shader.PSPhong)
+
 	if err != nil {
 		panic(err)
 	}
@@ -72,14 +74,20 @@ func main() {
 	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
 	gl.Uniform1i(textureUniform, 0)
 
-	setUniform3f(program, "light.pos", -5.0, 0.0, 5.0)
+	/*setUniform3f(program, "light.pos", -5.0, 0.0, 5.0)
 	setUniform3f(program, "light.La", 0.3, 0.3, 0.3)
 	setUniform3f(program, "light.Ld", 0.0, 1.0, 1.0)
 	setUniform3f(program, "light.Ls", 0.0, 0.7, 0.9)
 	setUniform3f(program, "mat.Ka", 0.3, 0.3, 0.3)
 	setUniform3f(program, "mat.Kd", 0.0, 1.0, 1.0)
 	setUniform3f(program, "mat.Ks", 0.0, 0.7, 0.9)
-	setUniform1f(program, "mat.sh", 1.0)
+	setUniform1f(program, "mat.sh", 1.0)*/
+	setUniform3f(program, "LP", -5.0, 0.0, 5.0)
+	setUniform3f(program, "LI", 0.7, 0.7, 0.7)
+	setUniform3f(program, "Ka", 0.3, 0.3, 0.3)
+	setUniform3f(program, "Kd", 0.0, 1.0, 1.0)
+	//setUniform3f(program, "Ks", 0.0, 0.7, 0.9)
+	//setUniform1f(program, "Sh", 1.0)
 
 	gl.BindFragDataLocation(program, 0, gl.Str("outColor\x00"))
 
@@ -163,23 +171,35 @@ func main() {
 		}
 	}()
 
+	mode := window.GetInputMode(glfw.CursorMode)
+	prevCX, prevCY := window.GetCursorPos()
+	window.SetCursorPosCallback(func(w *glfw.Window, xpos float64, ypos float64) {
+		//fmt.Printf("mouser: (%f, %f)\n", xpos, ypos)
+		if mode == glfw.CursorDisabled {
+			fmt.Printf("mouse: (%f, %f)\n", xpos-prevCX, ypos-prevCY)
+			window.SetCursorPos(prevCX, prevCY)
+		}
+	})
+
 	// window.GetKey(glfw.KeyEscape) != glfw.Press
 	window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 		// action: Release, Press, Repeat
 		// mod: ModShift, ModControl ModAlt, ModSuper
 		if key == glfw.KeyEscape && action == glfw.Press {
-			mode := window.GetInputMode(glfw.CursorMode)
 			next := glfw.CursorDisabled
 			if mode == glfw.CursorDisabled {
 				next = glfw.CursorNormal
+			} else {
+				prevCX, prevCY = window.GetCursorPos()
 			}
 			window.SetInputMode(glfw.CursorMode, next)
+			mode = next
 		}
 	})
 
 	window.SetMouseButtonCallback(func(w *glfw.Window, button glfw.MouseButton, action glfw.Action, mod glfw.ModifierKey) {
 		// button: MouseButtonLeft, MouseButtonRight, MouseButtonMiddle
-		btn := map[glfw.MouseButton]string{
+		/*btn := map[glfw.MouseButton]string{
 			glfw.MouseButtonLeft:   "left",
 			glfw.MouseButtonRight:  "right",
 			glfw.MouseButtonMiddle: "middle",
@@ -188,12 +208,8 @@ func main() {
 			glfw.Press:   "press",
 			glfw.Release: "release",
 			glfw.Repeat:  "repeat",
-		}
-		fmt.Println(btn[button] + act[action])
-	})
-
-	window.SetCursorPosCallback(func(w *glfw.Window, xpos float64, ypos float64) {
-		fmt.Printf("mouser: (%f, %f)\n", xpos, ypos)
+		}*/
+		//fmt.Println(btn[button] + act[action])
 	})
 
 	for !window.ShouldClose() {

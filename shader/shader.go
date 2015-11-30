@@ -65,7 +65,7 @@ func compile(source string, shaderType uint32) (uint32, error) {
 	return shader, nil
 }
 
-// VertexShader po
+// VertexShader simple vertex base ADS
 const VertexShader = `
 #version 330
 uniform mat4 mProj;
@@ -117,7 +117,7 @@ void main() {
 }
 ` + "\x00"
 
-// FragmentShader po
+// FragmentShader simple vertex base ADS
 const FragmentShader = `
 #version 330
 uniform sampler2D tex;
