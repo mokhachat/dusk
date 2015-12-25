@@ -1,5 +1,5 @@
 {
-    "go.buildOnSave": true,
+    "go.buildOnSave": false,
     "go.lintOnSave": true,
     "go.vetOnSave": false,
     "go.formatOnSave": true,

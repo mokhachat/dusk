@@ -1,6 +1,6 @@
 package shader
 
-// VSPhong Phong Shader
+// Phong Shader
 const VSPhong = `
 #version 330
 uniform mat4 mProj;
