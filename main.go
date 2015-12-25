@@ -91,14 +91,12 @@ func main() {
 	}
 
 	// Configure the vertex data
-	cube := mesh.NewMesh(mesh.CubeVertices, mesh.CubeUVs)
-	vao := cube.StructVAO(program)
+	cube := mesh.NewMesh(mesh.CubeVertices, mesh.CubeUVs, mesh.CubeIndices)
+	/*vao := */ cube.StructVAO(program)
 
 	// Configure global settings
 	gl.Enable(gl.DEPTH_TEST)
 	gl.DepthFunc(gl.LESS)
-	gl.ClearColor(1.0, 1.0, 1.0, 1.0)
-
 	angle := 0.0
 	gl.ClearColor(0.0, 0.0, 0.0, 1.0)
 
@@ -179,7 +177,7 @@ func main() {
 		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
 		gl.UniformMatrix4fv(normalUniform, 1, false, &normal[0])
 
-		gl.BindVertexArray(vao)
+		//gl.BindVertexArray(vao)
 
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, tex)
