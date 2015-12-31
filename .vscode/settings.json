@@ -2,6 +2,6 @@
     "go.buildOnSave": false,
     "go.lintOnSave": true,
     "go.vetOnSave": false,
-    "go.formatOnSave": true,
+    "go.formatOnSave": false,
     "go.formatTool": "goimports"
 }

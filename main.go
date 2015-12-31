@@ -77,23 +77,22 @@ func main() {
 	setUniform3f(program, "LP", -5.0, 0.0, 5.0)
 	setUniform3f(program, "LI", 0.7, 0.7, 0.7)
 	setUniform3f(program, "Ka", 0.3, 0.3, 0.3)
-	setUniform3f(program, "Kd", 0.0, 1.0, 1.0)
-	setUniform3f(program, "Ks", 0.0, 0.7, 0.9)
+	setUniform3f(program, "Kd", 1.0, 1.0, 1.0)
+	setUniform3f(program, "Ks", 0.8, 0.7, 0.9)
 	setUniform1f(program, "Sh", 1.0)
 
 	gl.BindFragDataLocation(program, 0, gl.Str("outColor\x00"))
 
 	// Load the texture
 	tex, err := texture.Load("data/texture.png")
-	//texture, err := texture.Text("data/RictyDiminished-Regular.ttf", 128, "ポA1")
+    //tex, err := texture.Text("data/RictyDiminished-Regular.ttf", 128, "ポA1")
 	if err != nil {
 		panic(err)
 	}
 
-	// Configure the vertex data
 	cube := mesh.NewMesh(mesh.CubeVertices, mesh.CubeUVs, mesh.CubeIndices)
-	/*vao := */ cube.StructVAO(program)
-
+    cube.StructVAO(program)
+    
 	// Configure global settings
 	gl.Enable(gl.DEPTH_TEST)
 	gl.DepthFunc(gl.LESS)
@@ -177,13 +176,11 @@ func main() {
 		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
 		gl.UniformMatrix4fv(normalUniform, 1, false, &normal[0])
 
-		//gl.BindVertexArray(vao)
-
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, tex)
-
-		cube.Draw()
-
+        
+        cube.Draw()
+        
 		window.SwapBuffers()
 		glfw.PollEvents()
 

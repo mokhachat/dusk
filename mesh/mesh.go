@@ -1,12 +1,14 @@
 package mesh
 
 import "github.com/go-gl/gl/v3.3-core/gl"
+import "fmt"
 
 type Mesh struct {
 	Vertices []float32
 	Normals  []float32
 	UVs      []float32
 	Indices  []uint32
+    Colors   []float32
 	vao      uint32
 	vbo      [3]uint32
 	ibo      uint32
@@ -17,6 +19,26 @@ func NewMesh(vertices []float32, uvs []float32, indices []uint32) *Mesh {
 	mesh := &Mesh{
 		Vertices: vertices,
 		Normals:  CalcNormals(vertices, indices),
+		UVs:      uvs,
+		Indices:  indices,
+	}
+	return mesh
+}
+
+func NewMesh2(vertices []float32, normals []float32, colors []float32, indices []uint32) *Mesh {
+	mesh := &Mesh{
+		Vertices: vertices,
+		Normals:  normals,
+		Colors:      colors,
+		Indices:  indices,
+	}
+	return mesh
+}
+
+func NewMesh3(vertices []float32, normals []float32, uvs []float32, indices []uint32) *Mesh {
+	mesh := &Mesh{
+		Vertices: vertices,
+		Normals:  normals,
 		UVs:      uvs,
 		Indices:  indices,
 	}
@@ -41,7 +63,7 @@ func (self *Mesh) StructVAO(program uint32) /*uint32*/ {
 	//var ibo uint32
 	gl.GenBuffers(1, &self.ibo)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, self.ibo)
-	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(self.Indices)*4, gl.Ptr(self.Indices), gl.STATIC_DRAW)
+    gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(self.Indices)*4, gl.Ptr(self.Indices), gl.STATIC_DRAW)
 
 	vertAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vPos\x00")))
 	gl.EnableVertexAttribArray(vertAttrib)
@@ -52,6 +74,42 @@ func (self *Mesh) StructVAO(program uint32) /*uint32*/ {
 	uvAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vUv\x00")))
 	gl.EnableVertexAttribArray(uvAttrib)
 	gl.VertexAttribPointer(uvAttrib, 2, gl.FLOAT, false, 2*4, gl.PtrOffset(0))
+
+	gl.BindBuffer(gl.ARRAY_BUFFER, self.vbo[2])
+	gl.BufferData(gl.ARRAY_BUFFER, len(self.Normals)*4, gl.Ptr(self.Normals), gl.STATIC_DRAW)
+	norAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vNor\x00")))
+	gl.EnableVertexAttribArray(norAttrib)
+	gl.VertexAttribPointer(norAttrib, 3, gl.FLOAT, false, 3*4, gl.PtrOffset(0))
+
+	//return vao
+}
+
+func (self *Mesh) StructVAO2(program uint32) /*uint32*/ {
+	//var vao uint32
+	gl.GenVertexArrays(1, &self.vao)
+	gl.BindVertexArray(self.vao)
+
+	//var vbo [3]uint32
+	gl.GenBuffers(int32(len(self.vbo)), &self.vbo[0])
+
+	gl.BindBuffer(gl.ARRAY_BUFFER, self.vbo[0])
+	gl.BufferData(gl.ARRAY_BUFFER, len(self.Vertices)*4, gl.Ptr(self.Vertices), gl.STATIC_DRAW)
+
+	//var ibo uint32
+	gl.GenBuffers(1, &self.ibo)
+	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, self.ibo)
+	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(self.Indices)*4, gl.Ptr(self.Indices), gl.STATIC_DRAW)
+    fmt.Printf("%d\n", len(self.Indices))
+	
+	vertAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vPos\x00")))
+	gl.EnableVertexAttribArray(vertAttrib)
+	gl.VertexAttribPointer(vertAttrib, 3, gl.FLOAT, false, 3*4, gl.PtrOffset(0))
+
+	gl.BindBuffer(gl.ARRAY_BUFFER, self.vbo[1])
+	gl.BufferData(gl.ARRAY_BUFFER, len(self.Colors)*4, gl.Ptr(self.Colors), gl.STATIC_DRAW)
+	uvAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vCol\x00")))
+	gl.EnableVertexAttribArray(uvAttrib)
+	gl.VertexAttribPointer(uvAttrib, 4, gl.FLOAT, false, 4*4, gl.PtrOffset(0))
 
 	gl.BindBuffer(gl.ARRAY_BUFFER, self.vbo[2])
 	gl.BufferData(gl.ARRAY_BUFFER, len(self.Normals)*4, gl.Ptr(self.Normals), gl.STATIC_DRAW)
