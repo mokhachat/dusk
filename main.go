@@ -3,15 +3,22 @@ package main
 import (
 	"fmt"
 	"runtime"
+    "strings"
 	"time"
-
-	"github.com/rhakt/dusk/mesh"
+    "io/ioutil"
+    
+    "github.com/rhakt/dusk/mesh"
 	"github.com/rhakt/dusk/shader"
 	"github.com/rhakt/dusk/texture"
-
-	"github.com/go-gl/gl/v3.3-core/gl"
+    schema "github.com/rhakt/dusk/model"
+    
+    "github.com/go-gl/gl/v3.3-core/gl"
 	"github.com/go-gl/glfw/v3.1/glfw"
 	mgl "github.com/go-gl/mathgl/mgl32"
+    
+    "github.com/rhakt/lz4"
+    
+    //flatbuffers "github.com/google/flatbuffers/go"
 )
 
 const windowWidth = 800
@@ -46,7 +53,7 @@ func main() {
 	//version := gl.GoStr(gl.GetString(gl.VERSION))
 	//fmt.Println("OpenGL version", version)
 
-	program, err := shader.Program(shader.VSPhong, shader.PSPhong)
+	program, err := shader.Program(shader.VSPhong3, shader.PSPhong3)
 
 	if err != nil {
 		panic(err)
@@ -58,7 +65,7 @@ func main() {
 	projectionUniform := gl.GetUniformLocation(program, gl.Str("mProj\x00"))
 	gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
 
-	camera := mgl.LookAtV(mgl.Vec3{3, 3, 3}, mgl.Vec3{0, 0, 0}, mgl.Vec3{0, 1, 0})
+	camera := mgl.LookAtV(mgl.Vec3{160, 160, 160}, mgl.Vec3{0, 80, 0}, mgl.Vec3{0, 1, 0})
 	model := mgl.Ident4()
 
 	normal := camera.Mul4(model).Inv().Transpose()
@@ -74,7 +81,7 @@ func main() {
 	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
 	gl.Uniform1i(textureUniform, 0)
 
-	setUniform3f(program, "LP", -5.0, 0.0, 5.0)
+	setUniform3f(program, "LP", -300.0, 150.0, 300.0)
 	setUniform3f(program, "LI", 0.7, 0.7, 0.7)
 	setUniform3f(program, "Ka", 0.3, 0.3, 0.3)
 	setUniform3f(program, "Kd", 1.0, 1.0, 1.0)
@@ -84,14 +91,84 @@ func main() {
 	gl.BindFragDataLocation(program, 0, gl.Str("outColor\x00"))
 
 	// Load the texture
-	tex, err := texture.Load("data/texture.png")
+	//tex, err := texture.Load("data/texture.png")
     //tex, err := texture.Text("data/RictyDiminished-Regular.ttf", 128, "ポA1")
-	if err != nil {
+	/*if err != nil {
 		panic(err)
-	}
+	}*/
+    
+    src, err := ioutil.ReadFile("data/unitychan.rchr")
+    if err != nil {
+        panic(err)
+    }
+    
+    dst := make([]byte, len(src) * 10)
+    dstSize, err := lz4.Decompress(src, dst)
+    if err != nil {
+        panic(err)
+    }
+    dst = dst[:dstSize]
+    
+    scene := schema.GetRootAsScene(dst, 0)
+    
+    var meshes []*mesh.Mesh
+    var meshes2 []*mesh.Mesh
+    var texes []uint32
+    var texes2 []uint32
+    for i := 0; i < scene.MeshesLength(); i++ {
+        var m schema.Mesh
+        ok := scene.Meshes(&m, i)
+        if !ok {
+            break
+        }
+        ver := make([]float32, m.VerticesLength())
+        for k := 0; k < m.VerticesLength(); k++ {
+            ver[k] = m.Vertices(k)
+        }
+        nor := make([]float32, m.NormalsLength())
+        for k := 0; k < m.NormalsLength(); k++ {
+            nor[k] = m.Normals(k)
+        }
+        uv := make([]float32, m.UvsLength())
+        for k := 0; k < m.UvsLength() / 2; k++ {
+            uv[k*2] = m.Uvs(k*2)
+            uv[k*2+1] = 1.0 - m.Uvs(k*2+1)
+        }
+        col := make([]float32, m.ColorsLength())
+        for k := 0; k < m.ColorsLength(); k++ {
+            col[k] = m.Colors(k)
+        }
+        ind := make([]uint32, m.IndicesLength())
+        for k := 0; k < m.IndicesLength(); k++ {
+            ind[k] = uint32(m.Indices(k))
+        }
+        
+        texname := string(m.Texture())
+        //texname = strings.Replace(texname, ".tga", ".png", 1)
+        //fmt.Println(texname);
+        tex, err := texture.Load("./data/texture/" + texname)
+        if err != nil {
+		  panic(err)
+        }
+        
+        
+        //newmesh := mesh.NewMesh2(ver, nor, col, ind)
+        //newmesh := mesh.NewMesh4(ver, col, ind)
+        newmesh := mesh.NewMesh5(ver, nor, uv, col, ind)
+        newmesh.StructVAO3(program)
+        
+        if(strings.Contains(texname, "cheek")){
+            meshes2 = append(meshes2, newmesh)
+            texes2 = append(texes2, tex)
+        }else{
+            meshes = append(meshes, newmesh)
+            texes = append(texes, tex)    
+        }
+    }
+    
 
-	cube := mesh.NewMesh(mesh.CubeVertices, mesh.CubeUVs, mesh.CubeIndices)
-    cube.StructVAO(program)
+	//cube := mesh.NewMesh(mesh.CubeVertices, mesh.CubeUVs, mesh.CubeIndices)
+    //cube.StructVAO(program)
     
 	// Configure global settings
 	gl.Enable(gl.DEPTH_TEST)
@@ -110,7 +187,7 @@ func main() {
 			case <-frame:
 				counter++
 			case <-tf.C:
-				fmt.Println(counter)
+				//fmt.Println(counter)
 				counter = 0
 			}
 		}
@@ -164,8 +241,11 @@ func main() {
 		}
 		fmt.Println(btn[button] + act[action])
 	})
-
-	for !window.ShouldClose() {
+    
+    //gl.PolygonMode(gl.FRONT_AND_BACK, gl.LINE)
+    gl.Enable(gl.BLEND)
+    gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		model = mgl.HomogRotate3D(float32(angle), mgl.Vec3{0, 1, 0})
@@ -176,10 +256,22 @@ func main() {
 		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
 		gl.UniformMatrix4fv(normalUniform, 1, false, &normal[0])
 
-		gl.ActiveTexture(gl.TEXTURE0)
-		gl.BindTexture(gl.TEXTURE_2D, tex)
+		//gl.ActiveTexture(gl.TEXTURE0)
+		//gl.BindTexture(gl.TEXTURE_2D, tex)
         
-        cube.Draw()
+        //cube.Draw()
+        for k, m := range(meshes) {
+            gl.ActiveTexture(gl.TEXTURE0)
+            gl.BindTexture(gl.TEXTURE_2D, texes[k])
+            m.Draw()
+        }
+        //gl.DepthMask(false);
+        for k, m := range(meshes2) {
+            gl.ActiveTexture(gl.TEXTURE0)
+            gl.BindTexture(gl.TEXTURE_2D, texes2[k])
+            m.Draw()
+        }
+        //gl.DepthMask(true);
         
 		window.SwapBuffers()
 		glfw.PollEvents()

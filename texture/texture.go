@@ -5,9 +5,11 @@ import (
 	"image"
 	"image/draw"
 	_ "image/png"
-	"os"
-
-	"github.com/go-gl/gl/v3.3-core/gl"
+    
+    "os"
+    
+    _ "github.com/ftrvxmtrx/tga"
+    "github.com/go-gl/gl/v3.3-core/gl"
 )
 
 func Create(rgba image.RGBA) (uint32, error) {
@@ -39,17 +41,20 @@ func Load(file string) (uint32, error) {
 	if err != nil {
 		return 0, err
 	}
+    defer imgFile.Close()
 	img, _, err := image.Decode(imgFile)
-	if err != nil {
-		return 0, err
-	}
-
-	rgba := image.NewRGBA(img.Bounds())
+	
+    rgba := image.NewRGBA(img.Bounds())
 	if rgba.Stride != rgba.Rect.Size().X*4 {
 		return 0, fmt.Errorf("unsupported stride")
 	}
 
 	draw.Draw(rgba, rgba.Bounds(), img, image.Point{0, 0}, draw.Src)
+    
+    /*topng, _ := os.Create(file + ".png")
+    defer topng.Close()
 
+    png.Encode(topng, rgba)
+    */
 	return Create(*rgba)
 }
