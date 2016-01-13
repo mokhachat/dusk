@@ -141,6 +141,9 @@ func main() {
         ind := make([]uint32, m.IndicesLength())
         for k := 0; k < m.IndicesLength(); k++ {
             ind[k] = uint32(m.Indices(k))
+            if(ind[k] != uint32(k)) {
+                fmt.Println("mesh:",  i, "  ", ind[k], " != ", k);
+            }
         }
         
         texname := string(m.Texture())
@@ -160,6 +163,7 @@ func main() {
         if(strings.Contains(texname, "cheek")){
             meshes2 = append(meshes2, newmesh)
             texes2 = append(texes2, tex)
+            fmt.Println("alpha ->", texname);
         }else{
             meshes = append(meshes, newmesh)
             texes = append(texes, tex)    
@@ -245,6 +249,7 @@ func main() {
     //gl.PolygonMode(gl.FRONT_AND_BACK, gl.LINE)
     gl.Enable(gl.BLEND)
     gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    //gl.Disable(gl.CULL_FACE);
     for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
@@ -260,12 +265,14 @@ func main() {
 		//gl.BindTexture(gl.TEXTURE_2D, tex)
         
         //cube.Draw()
+        gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         for k, m := range(meshes) {
             gl.ActiveTexture(gl.TEXTURE0)
             gl.BindTexture(gl.TEXTURE_2D, texes[k])
             m.Draw()
         }
         //gl.DepthMask(false);
+        gl.BlendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
         for k, m := range(meshes2) {
             gl.ActiveTexture(gl.TEXTURE0)
             gl.BindTexture(gl.TEXTURE_2D, texes2[k])

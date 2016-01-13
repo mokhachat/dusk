@@ -142,21 +142,19 @@ func (self *Mesh) StructVAO2(program uint32) /*uint32*/ {
 	//return vao
 }
 
-func (self *Mesh) StructVAO3(program uint32) /*uint32*/ {
-	//var vao uint32
+func (self *Mesh) StructVAO3(program uint32) {
 	gl.GenVertexArrays(1, &self.vao)
 	gl.BindVertexArray(self.vao)
 
-	//var vbo [3]uint32
 	gl.GenBuffers(int32(len(self.vbo)), &self.vbo[0])
     
 	gl.BindBuffer(gl.ARRAY_BUFFER, self.vbo[0])
 	gl.BufferData(gl.ARRAY_BUFFER, len(self.Vertices)*4, gl.Ptr(self.Vertices), gl.STATIC_DRAW)
 
-	//gl.GenBuffers(1, &self.ibo)
-	//gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, self.ibo)
-	//gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(self.Indices)*4, gl.Ptr(self.Indices), gl.STATIC_DRAW)
-    //fmt.Printf("%d\n", len(self.Indices))
+	gl.GenBuffers(1, &self.ibo)
+	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, self.ibo)
+	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(self.Indices)*4, gl.Ptr(self.Indices), gl.STATIC_DRAW)
+    fmt.Printf("%d\n", len(self.Indices))
 	
 	vertAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vPos\x00")))
 	gl.EnableVertexAttribArray(vertAttrib)
@@ -179,15 +177,12 @@ func (self *Mesh) StructVAO3(program uint32) /*uint32*/ {
 	norAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vNor\x00")))
 	gl.EnableVertexAttribArray(norAttrib)
 	gl.VertexAttribPointer(norAttrib, 3, gl.FLOAT, false, 3*4, gl.PtrOffset(0))
-
-	//return vao
 }
 
 func (self *Mesh) Draw() {
 	gl.BindVertexArray(self.vao)
-	gl.DrawArrays(gl.TRIANGLES, 0, self.GetVerticesNum())
-	//gl.BindVertexArray(self.ibo)
-	//gl.DrawElements(gl.TRIANGLES, int32(len(self.Indices)), gl.UNSIGNED_INT, gl.PtrOffset(0))
+	//gl.DrawArrays(gl.TRIANGLES, 0, self.GetVerticesNum())
+	gl.DrawElements(gl.TRIANGLES, int32(len(self.Indices)), gl.UNSIGNED_INT, gl.PtrOffset(0))
 }
 
 func CalcNormals(vertices []float32, indices []uint32) []float32 {
