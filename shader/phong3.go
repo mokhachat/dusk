@@ -11,17 +11,33 @@ in vec3 vPos;
 in vec3 vNor;
 in vec4 vCol;
 in vec2 vUv;
+in uvec4 vBI;
+in vec4 vBW;
 out vec2 fUv;
 out vec4 fCol;
 out vec3 fPos;
 out vec3 fNor;
-void main() {
-	fNor = vec3(normalize(mNormal * vec4(vNor, 1.0)));
+uniform mat4 meshMatrix;
+/*layout (std140) uniform frameInfo {
+    mat4 boneMatrices[128];
+};*/
+uniform mat4 boneMatrices[128];
+  
+void main() {  
+    mat4 boneMatrix;
+    boneMatrix = boneMatrices[vBI.x] * vBW.x;
+    boneMatrix += boneMatrices[vBI.y] * vBW.y;
+    boneMatrix += boneMatrices[vBI.z] * vBW.z;
+    boneMatrix += boneMatrices[vBI.w] * vBW.w;
+    
+    fNor = vec3(normalize(mNormal * meshMatrix * boneMatrix * vec4(vNor, 1.0)));
 	mat4 MV = mView * mModel;
 	fPos = vec3(MV * vec4(vPos, 1.0));
     fCol = vCol;
+    //fCol = vec4(vBI.xyz / 128, 1.0);
+    //fCol = normalize(vBW);
     fUv = vUv;
-    gl_Position = mProj * MV * vec4(vPos, 1);
+    gl_Position = mProj * MV * meshMatrix * boneMatrix * vec4(vPos, 1);
 }
 ` + "\x00"
 

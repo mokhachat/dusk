@@ -9,8 +9,10 @@ type Mesh struct {
 	UVs      []float32
 	Indices  []uint32
     Colors   []float32
+    BoneIndices []uint32
+    BoneWeights []float32
 	vao      uint32
-	vbo      [4]uint32
+	vbo      [6]uint32
 	ibo      uint32
 }
 
@@ -55,7 +57,14 @@ func NewMesh4(vertices []float32, colors []float32, indices []uint32) *Mesh {
 	return mesh
 }
 
-func NewMesh5(vertices []float32, normals []float32, uvs []float32, colors []float32, indices []uint32) *Mesh {
+func NewMesh5(
+    vertices []float32, 
+    normals []float32, 
+    uvs []float32, 
+    colors []float32, 
+    indices []uint32,
+    boneindices []uint32,
+    boneweights []float32) *Mesh {
 	mesh := &Mesh{
 		Vertices: vertices,
 		//Normals:  CalcNormals(vertices, indices),
@@ -63,6 +72,8 @@ func NewMesh5(vertices []float32, normals []float32, uvs []float32, colors []flo
         UVs:      uvs,
 		Colors:   colors,
 		Indices:  indices,
+        BoneIndices: boneindices,
+        BoneWeights: boneweights,
 	}
 	return mesh
 }
@@ -154,7 +165,7 @@ func (self *Mesh) StructVAO3(program uint32) {
 	gl.GenBuffers(1, &self.ibo)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, self.ibo)
 	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(self.Indices)*4, gl.Ptr(self.Indices), gl.STATIC_DRAW)
-    fmt.Printf("%d\n", len(self.Indices))
+    //fmt.Printf("%d\n", len(self.Indices))
 	
 	vertAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vPos\x00")))
 	gl.EnableVertexAttribArray(vertAttrib)
@@ -177,6 +188,23 @@ func (self *Mesh) StructVAO3(program uint32) {
 	norAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vNor\x00")))
 	gl.EnableVertexAttribArray(norAttrib)
 	gl.VertexAttribPointer(norAttrib, 3, gl.FLOAT, false, 3*4, gl.PtrOffset(0))
+    
+    //fmt.Println("po");
+    //fmt.Println(len(self.BoneIndices));
+    //fmt.Println(len(self.BoneWeights));
+    
+    gl.BindBuffer(gl.ARRAY_BUFFER, self.vbo[4])
+	gl.BufferData(gl.ARRAY_BUFFER, len(self.BoneIndices)*4, gl.Ptr(self.BoneIndices), gl.STATIC_DRAW)
+	biAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vBI\x00")))
+	gl.EnableVertexAttribArray(biAttrib)
+    gl.VertexAttribPointer(biAttrib, 4, gl.FLOAT, false, 4*4, gl.PtrOffset(0))
+    
+    gl.BindBuffer(gl.ARRAY_BUFFER, self.vbo[5])
+	gl.BufferData(gl.ARRAY_BUFFER, len(self.BoneWeights)*4, gl.Ptr(self.BoneWeights), gl.STATIC_DRAW)
+	bwAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vBW\x00")))
+	gl.EnableVertexAttribArray(bwAttrib)
+	gl.VertexAttribPointer(bwAttrib, 4, gl.FLOAT, false, 4*4, gl.PtrOffset(0))
+    
 }
 
 func (self *Mesh) Draw() {

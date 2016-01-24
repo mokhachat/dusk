@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"runtime"
-    "strings"
+    //"strings"
 	"time"
     "io/ioutil"
     
@@ -26,6 +26,12 @@ const windowHeight = 600
 
 func init() {
 	runtime.LockOSThread()
+}
+
+
+type MeshInfo struct {
+    MeshMatrices []mgl.Mat4
+    BoneMatrices [][]mgl.Mat4
 }
 
 func main() {
@@ -80,6 +86,15 @@ func main() {
 
 	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
 	gl.Uniform1i(textureUniform, 0)
+    
+    mmUniform := gl.GetUniformLocation(program, gl.Str("meshMatrix\x00"))
+    
+    /*ubi := gl.GetUniformBlockIndex(program, gl.Str("frameInfo\x00"));
+    var bmUniform uint32
+    gl.GenBuffers(1, &bmUniform)
+    */
+    bmUniform := gl.GetUniformLocation(program, gl.Str("boneMatrices\x00"))
+    fmt.Println("bmUniform", bmUniform, mmUniform)
 
 	setUniform3f(program, "LP", -300.0, 150.0, 300.0)
 	setUniform3f(program, "LI", 0.7, 0.7, 0.7)
@@ -112,9 +127,7 @@ func main() {
     scene := schema.GetRootAsScene(dst, 0)
     
     var meshes []*mesh.Mesh
-    var meshes2 []*mesh.Mesh
     var texes []uint32
-    var texes2 []uint32
     for i := 0; i < scene.MeshesLength(); i++ {
         var m schema.Mesh
         ok := scene.Meshes(&m, i)
@@ -141,9 +154,9 @@ func main() {
         ind := make([]uint32, m.IndicesLength())
         for k := 0; k < m.IndicesLength(); k++ {
             ind[k] = uint32(m.Indices(k))
-            if(ind[k] != uint32(k)) {
+            /*if(ind[k] != uint32(k)) {
                 fmt.Println("mesh:",  i, "  ", ind[k], " != ", k);
-            }
+            }*/
         }
         
         texname := string(m.Texture())
@@ -154,20 +167,99 @@ func main() {
 		  panic(err)
         }
         
+        //fmt.Println(m.VerticesLength() * 4 / 3, m.BoneIndicesLength(), m.BoneWeightsLength());
+        
+        bi := make([]uint32, m.VerticesLength() * 4 / 3)
+        if m.BoneIndicesLength() == 0 {
+            for k, _ := range bi {
+                bi[k] = 0
+            }
+        } else {
+            for k, _ := range bi {
+                bi[k] = uint32(m.BoneIndices(k))
+                if(bi[k] > 127) {
+                    fmt.Println(i, k, bi[k])
+                } 
+            }
+        }
+        
+        
+        bw := make([]float32, m.VerticesLength() * 4 / 3)
+        if m.BoneWeightsLength() == 0 {
+            for k, _ := range bw {
+                bw[k] = 0.25
+            }
+        } else {
+            for k := 0; k < m.BoneWeightsLength(); k++ {
+                bw[k] = m.BoneWeights(k)
+                if(bw[k] < 0 || bw[k] > 1) {
+                    fmt.Println(i, k, bw[k])
+                }
+            }    
+        }
+        
         
         //newmesh := mesh.NewMesh2(ver, nor, col, ind)
         //newmesh := mesh.NewMesh4(ver, col, ind)
-        newmesh := mesh.NewMesh5(ver, nor, uv, col, ind)
+        newmesh := mesh.NewMesh5(ver, nor, uv, col, ind, bi, bw)
         newmesh.StructVAO3(program)
         
-        if(strings.Contains(texname, "cheek")){
+        /*if(strings.Contains(texname, "cheek")){
             meshes2 = append(meshes2, newmesh)
             texes2 = append(texes2, tex)
             fmt.Println("alpha ->", texname);
-        }else{
-            meshes = append(meshes, newmesh)
-            texes = append(texes, tex)    
+        }*/
+        meshes = append(meshes, newmesh)
+        texes = append(texes, tex)    
+    }
+    
+    var a schema.Anim
+    ok := scene.Animes(&a, 1)
+    if !ok {
+        fmt.Println("baka")
+    }
+    frameInfo := make([]MeshInfo, a.MeshesLength())
+    for k := 0; k < a.MeshesLength(); k++ {
+        var af schema.AnimFrame
+        ok := a.Meshes(&af, k)
+        if !ok {
+            break
         }
+        mml := af.MeshMatricesLength()
+        bml := af.BoneMatricesLength()
+        var vmm []mgl.Mat4
+        for j := 0; j < mml; j++ {
+            var f schema.Frame
+            ok := af.MeshMatrices(&f, j)
+            if !ok {
+                break
+            }
+            var matrix [16]float32
+            for l := 0; l < 16; l++ {
+                matrix[l] = f.Data(l)
+            }
+            vmm = append(vmm, mgl.Mat4(matrix))
+        }
+        var vbm [][]mgl.Mat4
+        for j := 0; j < bml; j++ {
+            var f schema.Frame
+            ok := af.BoneMatrices(&f, j)
+            if !ok {
+                break
+            }
+            var matrices []mgl.Mat4
+            fmt.Println(k, j, f.DataLength())
+            for l := 0; l < f.DataLength() ; l+=16 {
+                var matrix [16]float32
+                for ll := 0; ll < 16 ; ll++ {
+                    matrix[ll] = f.Data(l + ll)
+                }
+                matrices = append(matrices, mgl.Mat4(matrix))
+            }
+            vbm = append(vbm, matrices)
+        }
+        //fmt.Println("debug", k)
+        frameInfo[k] = MeshInfo{vmm, vbm}
     }
     
 
@@ -201,7 +293,7 @@ func main() {
 	defer t.Stop()
 	go func() {
 		for range t.C {
-			angle += 0.01
+			angle += 0.00 // po
 		}
 	}()
 
@@ -230,7 +322,9 @@ func main() {
 			mode = next
 		}
 	})
-
+    
+    frametime := 0
+    
 	window.SetMouseButtonCallback(func(w *glfw.Window, button glfw.MouseButton, action glfw.Action, mod glfw.ModifierKey) {
 		// button: MouseButtonLeft, MouseButtonRight, MouseButtonMiddle
 		btn := map[glfw.MouseButton]string{
@@ -244,46 +338,77 @@ func main() {
 			glfw.Repeat:  "repeat",
 		}
 		fmt.Println(btn[button] + act[action])
+        if(act[action] == "press") { 
+            if(btn[button] == "left") { frametime++ }
+            if(btn[button] == "right" && frametime > 0) { frametime-- }
+        }
+        
 	})
     
     //gl.PolygonMode(gl.FRONT_AND_BACK, gl.LINE)
     gl.Enable(gl.BLEND)
-    gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    //gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.BlendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     //gl.Disable(gl.CULL_FACE);
     for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		model = mgl.HomogRotate3D(float32(angle), mgl.Vec3{0, 1, 0})
 		normal := camera.Mul4(model).Inv().Transpose()
-
-		// Render
+        
+        // Render
 		gl.UseProgram(program)
 		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
 		gl.UniformMatrix4fv(normalUniform, 1, false, &normal[0])
-
-		//gl.ActiveTexture(gl.TEXTURE0)
-		//gl.BindTexture(gl.TEXTURE_2D, tex)
+        
+       //gl.ActiveTexture(gl.TEXTURE0)  
+       //gl.BindTexture(gl.TEXTURE_2D, tex)
         
         //cube.Draw()
-        gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        //gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         for k, m := range(meshes) {
+            //if(k != 9) { continue }
+            mm := frameInfo[k].MeshMatrices
+            mmmat := mgl.Ident4()
+            if len(mm) > 0 {
+                mmmat = mm[frametime % len(mm)]
+            }
+            gl.UniformMatrix4fv(mmUniform, 1, false, &mmmat[0])
+            
+            bm := frameInfo[k].BoneMatrices
+            var bmmat [128]mgl.Mat4
+            for j, _ := range(bmmat) {
+                bmmat[j] = mgl.Ident4()
+                if len(bm) > 0 && j < len(bm[frametime % (len(bm))]) {
+                    bmmat[j] = bm[frametime % (len(bm))][j]
+                }
+            }
+            //gl.BindBuffer(gl.UNIFORM_BUFFER, bmUniform)
+            //gl.BufferData(gl.UNIFORM_BUFFER, 4*16*128, gl.Ptr(&bmmat[0][0]), gl.DYNAMIC_DRAW)
+            //gl.BindBufferBase(gl.UNIFORM_BUFFER, ubi, bmUniform)
+            /*for j, _ := range(bmmat) {
+                gl.UniformMatrix4fv(bmUniform + int32(j), 1, false, &bmmat[j][0])
+            }*/
+            gl.UniformMatrix4fv(bmUniform, 128, false, &bmmat[0][0])
+            
             gl.ActiveTexture(gl.TEXTURE0)
             gl.BindTexture(gl.TEXTURE_2D, texes[k])
             m.Draw()
         }
         //gl.DepthMask(false);
-        gl.BlendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+        /*gl.BlendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
         for k, m := range(meshes2) {
             gl.ActiveTexture(gl.TEXTURE0)
             gl.BindTexture(gl.TEXTURE_2D, texes2[k])
             m.Draw()
-        }
+        }*/
         //gl.DepthMask(true);
         
 		window.SwapBuffers()
 		glfw.PollEvents()
-
-		frame <- true
+        
+        frametime++
+        frame <- true
 	}
 }
 

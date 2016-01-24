@@ -107,7 +107,41 @@ func (rcv *Mesh) Texture() []byte {
 	return nil
 }
 
-func MeshStart(builder *flatbuffers.Builder) { builder.StartObject(6) }
+func (rcv *Mesh) BoneIndices(j int) int32 {
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(16))
+	if o != 0 {
+		a := rcv._tab.Vector(o)
+		return rcv._tab.GetInt32(a + flatbuffers.UOffsetT(j * 4))
+	}
+	return 0
+}
+
+func (rcv *Mesh) BoneIndicesLength() int {
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(16))
+	if o != 0 {
+		return rcv._tab.VectorLen(o)
+	}
+	return 0
+}
+
+func (rcv *Mesh) BoneWeights(j int) float32 {
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(18))
+	if o != 0 {
+		a := rcv._tab.Vector(o)
+		return rcv._tab.GetFloat32(a + flatbuffers.UOffsetT(j * 4))
+	}
+	return 0
+}
+
+func (rcv *Mesh) BoneWeightsLength() int {
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(18))
+	if o != 0 {
+		return rcv._tab.VectorLen(o)
+	}
+	return 0
+}
+
+func MeshStart(builder *flatbuffers.Builder) { builder.StartObject(8) }
 func MeshAddVertices(builder *flatbuffers.Builder, vertices flatbuffers.UOffsetT) { builder.PrependUOffsetTSlot(0, flatbuffers.UOffsetT(vertices), 0) }
 func MeshStartVerticesVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT { return builder.StartVector(4, numElems, 4)
 }
@@ -124,4 +158,10 @@ func MeshAddUvs(builder *flatbuffers.Builder, uvs flatbuffers.UOffsetT) { builde
 func MeshStartUvsVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT { return builder.StartVector(4, numElems, 4)
 }
 func MeshAddTexture(builder *flatbuffers.Builder, texture flatbuffers.UOffsetT) { builder.PrependUOffsetTSlot(5, flatbuffers.UOffsetT(texture), 0) }
+func MeshAddBoneIndices(builder *flatbuffers.Builder, boneIndices flatbuffers.UOffsetT) { builder.PrependUOffsetTSlot(6, flatbuffers.UOffsetT(boneIndices), 0) }
+func MeshStartBoneIndicesVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT { return builder.StartVector(4, numElems, 4)
+}
+func MeshAddBoneWeights(builder *flatbuffers.Builder, boneWeights flatbuffers.UOffsetT) { builder.PrependUOffsetTSlot(7, flatbuffers.UOffsetT(boneWeights), 0) }
+func MeshStartBoneWeightsVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT { return builder.StartVector(4, numElems, 4)
+}
 func MeshEnd(builder *flatbuffers.Builder) flatbuffers.UOffsetT { return builder.EndObject() }
